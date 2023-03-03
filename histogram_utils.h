@@ -34,14 +34,72 @@ THnSparseD* fill_5D_histogram(TH1D* unfolded_histogram, int nBinxF, double xFMin
                         int bin_idx = h_5D->GetBin(coord);
                         h_5D->SetBinContent(bin_idx, new_content);
                         h_5D->SetBinError(bin_idx, new_content_err);
-
                     }
                 }
             }
         }
     }
-
     return h_5D;
+}
+
+TH1D * Make2Dto1D(
+                        const char* hname,
+                         TH2D* h_phi_costh)
+{
+        int nbinX = h_phi_costh->GetNbinsX();
+        int nbinY = h_phi_costh->GetNbinsY();
+        int nbin = nbinX*nbinY;
+        //TH1D* h_phi_costh_1D = new TH1D("h_phi_costh_1D","h_phi_costh_1D",nbin, 1+0.5,nbin+0.5);
+        TH1D* h_phi_costh_1D = new TH1D("h_phi_costh_1D","h_phi_costh_1D",nbin, 1,nbin);
+        for (int ii=1; ii<= nbinX; ii++){
+                for (int jj=1; jj<= nbinY; jj++){
+                        //cout << "get bin number from TH2: \t" << "ii: "<< ii << " jj "<< jj<< " entry bin: "<< h_phi_costh->GetBin(ii,jj) << "we set: "<< ((ii-1)*nbinY + jj)<<endl;
+
+                        int BinIndex1D =  ((ii-1)*nbinY + jj);  //id bin number
+                        float x_2d = h_phi_costh->GetBinContent(ii,jj);
+                        float x_2d_error = h_phi_costh->GetBinError(ii,jj);
+                        h_phi_costh_1D->SetBinContent(BinIndex1D,x_2d);
+                        h_phi_costh_1D->SetBinError(BinIndex1D,x_2d_error);
+                }   
+        }   
+        return h_phi_costh_1D;
+}
+
+TH2D * Make1Dto2D(
+                        const char* hname,
+                        TH1D* hX, TH2D* phi_costh)
+{
+        TH2D*h = (TH2D*)phi_costh->Clone();
+        int nbinX = phi_costh->GetNbinsX();
+        int nbinY = phi_costh->GetNbinsY();
+        for (int ii=1; ii<= nbinX; ii++){
+                for (int jj=1; jj<= nbinY; jj++){
+
+                        int index=  (ii-1)*nbinY + jj;
+                        h->SetBinContent(ii,jj,hX->GetBinContent(index));
+                        h->SetBinError(ii,jj,hX->GetBinError(index));
+                }
+        }
+        return h;
+}
+
+TH2D * ResetEmptyBins(
+                        const char* hname,
+                         TH2D* h_phi_costh )
+ {
+        int nbinX = h_phi_costh->GetNbinsX();
+        int nbinY = h_phi_costh->GetNbinsY();
+        TH2D *h = (TH2D*)h_phi_costh->Clone();
+        for (int ii=1; ii<= nbinX; ii++){
+                for (int jj=1; jj<= nbinY; jj++){
+
+                        if(h_phi_costh->GetBinContent(ii,jj) <2){
+                                h->SetBinContent(ii,jj,0);
+                                h->SetBinError(ii,jj,0);
+                        };  
+                }   
+        }   
+        return h;
 }
 
 #endif // HISTOGRAM_UTILS_H
